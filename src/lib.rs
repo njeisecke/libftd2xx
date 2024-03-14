@@ -323,6 +323,7 @@ pub fn list_devices() -> Result<Vec<DeviceInfo>, FtStatus> {
     } else {
         while let Some(info_node) = list_info_vec.pop() {
             let (vid, pid) = vid_pid_from_id(info_node.ID);
+            let chip_id = Some("foo_list_devices".to_string());
             devices.push(DeviceInfo {
                 port_open: info_node.Flags & 0x1 == 0x1,
                 speed: Some((info_node.Flags & 0x2).into()),
@@ -331,6 +332,7 @@ pub fn list_devices() -> Result<Vec<DeviceInfo>, FtStatus> {
                 vendor_id: vid,
                 serial_number: slice_into_string(info_node.SerialNumber.as_ref()),
                 description: slice_into_string(info_node.Description.as_ref()),
+                chip_id,
             });
         }
         devices.sort_unstable();
@@ -445,6 +447,7 @@ pub fn list_devices_fs() -> io::Result<Vec<DeviceInfo>> {
                         vendor_id: FTDI_VID,
                         serial_number: port_serial,
                         description: port_description,
+                        chip_id: None,
                     })
                 }
             } else {
@@ -456,6 +459,7 @@ pub fn list_devices_fs() -> io::Result<Vec<DeviceInfo>> {
                     vendor_id: FTDI_VID,
                     serial_number: serial,
                     description: description,
+                    chip_id: None,
                 })
             }
         }
@@ -610,6 +614,34 @@ pub trait FtdiCommon {
         }
     }
 
+    // /// Get the unique chip id from the device.
+    // fn chip_id(&mut self) -> Result<u32, FtStatus> {
+    //     // https://vyvoj.hw.cz/navrh-obvodu/je-skutecne-ftdichip-id-v-ft232r-unikatni.html
+    //     let w1 = self.eeprom_word_read(0x43)? as u32;
+    //     let w2 = self.eeprom_word_read(0x44)? as u32;
+    //
+    //     println!("w1 {:#04x}", w1);
+    //     println!("w2 {:#04x}", w2);
+    //
+    //     let chip_id = w1 | (w2 << 16);
+    //
+    //     println!("ch {:#08x}", chip_id);
+    //
+    //     fn bit_shuffling(b_sn: u32) -> u32 {
+    //         (((((((b_sn & 0x2) << 0x1) | (b_sn & 0xF8)) << 0x3) | (b_sn & 0x1)) << 1)
+    //             | ((((((b_sn >> 2) & 0x10) | (b_sn & 0x87)) >> 0x1) | (b_sn & 0x30)) >> 1))
+    //             & 0xff
+    //     }
+    //
+    //     let chip_id: u32 = ((bit_shuffling(chip_id & 0xff) << 24)
+    //         | (bit_shuffling((chip_id >> 8) & 0xff) << 16)
+    //         | (bit_shuffling((chip_id >> 16) & 0xff) << 8)
+    //         | bit_shuffling((chip_id >> 24) & 0xff))
+    //         ^ 0xA5F0F7D1;
+    //
+    //     Ok(chip_id)
+    // }
+
     /// Get device information for an open device.
     ///
     /// # Example
@@ -638,6 +670,7 @@ pub trait FtdiCommon {
                 std::ptr::null_mut(),
             )
         };
+        let chip_id = Some("foo_device_info".to_string());
         let (vid, pid) = vid_pid_from_id(device_id);
         ft_result(
             DeviceInfo {
@@ -648,6 +681,7 @@ pub trait FtdiCommon {
                 vendor_id: vid,
                 serial_number: slice_into_string(serial_number.as_ref()),
                 description: slice_into_string(description.as_ref()),
+                chip_id,
             },
             status,
         )

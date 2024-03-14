@@ -617,6 +617,8 @@ pub struct DeviceInfo {
     /// This is assumed to be UTF-8.
     /// Data that is not UTF-8 will appear as the replacement character �.
     pub description: String,
+    /// TODO
+    pub chip_id: Option<String>,
 }
 
 pub fn vid_pid_from_id(id: u32) -> (u16, u16) {
@@ -639,6 +641,7 @@ impl fmt::Debug for DeviceInfo {
                 vendor_id: 0x{:04X}, \
                 product_id: 0x{:04X}, \
                 serial_number: {}, \
+                chip_id: {:?}, \
                 description: {} \
             }}",
             self.port_open,
@@ -647,6 +650,7 @@ impl fmt::Debug for DeviceInfo {
             self.vendor_id,
             self.product_id,
             self.serial_number,
+            self.chip_id,
             self.description,
         )
     }
